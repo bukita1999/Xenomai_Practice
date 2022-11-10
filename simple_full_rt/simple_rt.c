@@ -6,6 +6,7 @@
 #include <alchemy/timer.h>
 #include <math.h>
 
+#include "Output_data.h"
 
 
 #define CLOCK_RES 1e-9
