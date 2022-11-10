@@ -17,14 +17,22 @@ struct Output_data;
 //输出的方式可以时间戳写在文件当中，也可以通过usb连GPIO的方式进行输出
 int output_csv_single_pulse(FILE *file, Output_data * output) 
 {
-  fprintf(file,"");
-  fprintf(file,"");
+  fprintf(file,"%d,",output->ctr);
+  fprintf(file,"%s,",output->timestamp);
+  fprintf(file,"%f,",output->pulse_increment);
+  fprintf(file,"%d,",output->x_position);
+  fprintf(file,"%d,",output->y_position);
+  fprintf(file,"%d,",output->x_step);
+  fprintf(file,"%d,",output->y_step);
+  fprintf(file,"%f,",output->real_cycle_time);
+  fprintf(file,"%f,",output->real_intepolation_time);
+  fprintf(file,"%f",output->intrp_prop_on_cycle);
 }
 
 int dda_line_intepolation(float start_x, float start_y, float end_x, float end_y, float single_step) // dda开环控制
 {
   RT_TASK *curtask;
-  RTIME tstart, now;
+  
   RT_TASK_INFO curtaskinfo;
   int iret = 0;
 
