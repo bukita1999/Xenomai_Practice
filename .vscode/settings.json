@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "task.h": "c",
-        "output_data.h": "c"
+        "output_data.h": "c",
+        "timer.h": "c"
     }
 }
