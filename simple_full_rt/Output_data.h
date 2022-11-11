@@ -3,7 +3,7 @@
 
 typedef struct Output_data{
     int ctr;
-    RTIME timestamp; //时间戳字符化后的效果
+    //RTIME timestamp; //时间戳字符化后的效果
     float pulse_increment; //脉冲增量实际对比，此处是真实一个脉冲增量对应的距离
     int x_position; //目前所走到的位置x坐标
     int y_position;  //目前所走到的位置y坐标

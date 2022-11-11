@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -18,14 +19,14 @@ struct Output_data;
 int output_csv_single_pulse(FILE *file, Output_data *output)
 {
   fprintf(file, "%d,", output->ctr);
-  fprintf(file, "%.5f,", output->timestamp);
+  //fprintf(file, "%.5f,", output->timestamp);
   fprintf(file, "%f,", output->pulse_increment);
   fprintf(file, "%d,", output->x_position);
   fprintf(file, "%d,", output->y_position);
   fprintf(file, "%d,", output->x_step);
   fprintf(file, "%d,", output->y_step);
-  fprintf(file, "%f,", output->real_cycle_time);
-  fprintf(file, "%f,", output->real_intepolation_time);
+  fprintf(file, "%.5f,", output->real_cycle_time);
+  fprintf(file, "%.5f,", output->real_intepolation_time);
   fprintf(file, "%f", output->intrp_prop_on_cycle);
 }
 // Use DDA to intepolate the path
@@ -37,6 +38,8 @@ void dda_line_intepolation(void *arg)
   int iret = 0;
 
   RTIME tstart, now, tcycle,tintepolation, tlast, tcurrent;
+
+  float tproportion;
 
   //先使用硬编码的方式直接输入路径点
   int start_x = 0;
@@ -61,10 +64,18 @@ void dda_line_intepolation(void *arg)
   int step_x = 0;
   int step_y = 0;
 
+  Output_data * output;
+  output = (Output_data*)malloc(sizeof(Output_data));
+  
+
   rt_task_set_periodic(NULL, TM_NOW, LOOP_PERIOD);
 
   tstart = rt_timer_read();
 
+  //创建文件指针，准备将带有时间戳的文件写入CSV文件当中去
+  FILE *file = fopen("output.csv", "w");
+  //写csv文件的标题
+  fprintf(file, "ID,PulseSize,X,Y,x_step,y_step,Cycle Time,Intepolation Time,Intepolation Porprotion");
 
   curtask = rt_task_self();
   //获取此时时钟的指针
@@ -105,14 +116,28 @@ void dda_line_intepolation(void *arg)
     else
     {
       printf("Reach the destination. \n");
-      
+      fclose(file);
+      free(output);
       break;
     }
 
     tlast = rt_timer_read() - tstart;
     tintepolation = tlast-tcurrent;
+    tproportion = (tintepolation/1000000.0)/(tcycle/1000000.0)*100;
     printf("Intepolation_Time: %.5f ms \n",tintepolation/1000000.0);
     printf("Intepolation_Proportion: %.5f %% \n", (tintepolation/1000000.0)/(tcycle/1000000.0)*100);
+
+    output->ctr = ctr;
+    output->pulse_increment = 1;
+    output->x_position = current_x;
+    output->y_position = current_y;
+    output->x_step = step_x;
+    output->y_step = step_y;
+    output->real_cycle_time = tcycle;
+    output->real_intepolation_time = tintepolation;
+    output->intrp_prop_on_cycle = tproportion;
+
+    output_csv_single_pulse(file,output);
     rt_task_wait_period(NULL);
     
     //输出当前处于第几个周期，并且输出周期的时间
@@ -159,10 +184,7 @@ int main(int argc, char **argv)
 
   printf("Starting cyclic task...\n");
 
-  //创建文件指针，准备将带有时间戳的文件写入CSV文件当中去
-  FILE *file = fopen("output.csv", "w");
-  //写csv文件的标题
-  fprintf(file, "ID,TimeStamp,PulseSize,X,Y,x_step,y_step,Cycle Time,Intepolation Time,Intepolation Porprotion");
+  
 
   sprintf(str, "cyclic_task");
   //创建实时任务
@@ -177,6 +199,6 @@ int main(int argc, char **argv)
 
   rt_task_delete(&loop_task);
 
-  fclose(file);
+  
   return 0;
 }
